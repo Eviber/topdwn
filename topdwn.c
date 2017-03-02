@@ -4,12 +4,15 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#define WIN_W 1280
-#define WIN_H 720
+#define WIN_W 1920/2
+#define WIN_H 1080/2
 #define TABSIZE 100
 #define SPEED 10
-#define FPS 25
-#define ANIM_FPS 10
+#define FPS 30
+#define ANIM_FPS 30
+#define FRAMES 24
+#define SPRITE_W 24
+#define SPRITE_H 32
 
 #define UP    keys[SDL_SCANCODE_UP]
 #define DOWN  keys[SDL_SCANCODE_DOWN]
@@ -39,7 +42,7 @@ int		init(SDL_Window **win, SDL_Renderer **render)
 		fprintf(stderr, "Error while creating renderer: %s\n", SDL_GetError());
 		return (3);
 	}
-	SDL_SetRenderDrawColor(*render, 58, 2, 13, 255);
+	SDL_SetRenderDrawColor(*render, 22, 64, 127, 255);
 	SDL_RenderClear(*render);
 	return (0);
 }
@@ -63,75 +66,91 @@ SDL_Texture	*load_img(SDL_Renderer *render, char *path)
 	return (tex);
 }
 
-void	loop(SDL_Renderer *render)
+void	load_player(SDL_Renderer *render, SDL_Texture **tex, SDL_Rect *src, SDL_Rect *dst)
 {
-	SDL_Rect		rect;
+	*tex = load_img(render, "test.png");
+	dst->w = SPRITE_W * 4;
+	dst->h = SPRITE_H * 4;
+	dst->x = (WIN_W / 2) - (dst->w / 2);
+	dst->y = (WIN_H / 2) - (dst->h / 2);
+	src->w = SPRITE_W;
+	src->h = SPRITE_H;
+}
+
+
+void	handle_keys(SDL_Window *win, const Uint8 *keys, int *dir, SDL_Point *mov)
+{
+	if (keys[SDL_SCANCODE_F])
+		SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
+	if (keys[SDL_SCANCODE_ESCAPE])
+		SDL_SetWindowFullscreen(win, 0);
+	if (DOWN)
+		*dir = 2;
+	if (UP)
+		*dir = 0;
+	if (LEFT)
+		*dir = 3;
+	if (RIGHT)
+		*dir = 1;
+	mov->x = 0;
+	mov->y = 0;
+	SDL_PumpEvents();
+	mov->x = (LEFT || RIGHT) * SPEED * (-1 * (!RIGHT) + RIGHT);
+	mov->y = (UP || DOWN) * SPEED * (-1 * UP + (!UP));
+	if (mov->x && mov->y)
+	{
+		mov->x /= 2;
+		mov->y /= 2;
+	}
+}
+
+void	move(SDL_Rect *dst, SDL_Point mov)
+{
+		dst->x += mov.x;
+		dst->y += mov.y;
+}
+
+void	anim(SDL_Rect *src, int dir, const Uint8 *keys)
+{
+	static unsigned int	anim_ticks = 0;
+	static int			i = 0;
+
+	src->x = i * SPRITE_W;
+	src->y = dir * SPRITE_H;
+	if ((UP || DOWN || LEFT || RIGHT))
+	{
+		if (SDL_GetTicks() >= anim_ticks)
+		{
+			i = (i == FRAMES) ?  1 : i + 1;
+			anim_ticks = SDL_GetTicks() + (1000 / ANIM_FPS);
+		}
+	}
+	else
+		i = 0;
+}
+
+void	loop(SDL_Window *win, SDL_Renderer *render)
+{
+	SDL_Rect		dst;
 	SDL_Rect		src;
 	SDL_Texture		*tex;
 	const Uint8		*keys = SDL_GetKeyboardState(NULL);
-	int				xmov;
-	int				ymov;
-	int				i;
+	SDL_Point		mov;
 	int				dir;
-	unsigned int	anim_ticks;
 	unsigned int	ticks;
 
-	tex = load_img(render, "test.png");
-	rect.w = 50;
-	rect.h = 50;
-	rect.x = (WIN_W / 2) - (rect.w / 2);
-	rect.y = (WIN_H / 2) - (rect.h / 2);
-	src.h = 50;
-	src.w = 50;
-	i = 0;
-	anim_ticks = 0;
-	dir = 5;
+	load_player(render, &tex, &src, &dst);
+	dir = 2;
 	while (!SDL_QuitRequested())
 	{
-		xmov = 0;
-		ymov = 0;
-		SDL_PumpEvents();
-		if (UP || DOWN || LEFT || RIGHT)
-		{
-			dir = 0;
-			if (UP)
-				dir = 2;
-			if (DOWN)
-				dir = 5;
-			if (RIGHT)
-				dir += 7;
-			else if (LEFT)
-				dir += 6;
-			dir = dir % 8;
-		}
-		xmov = (LEFT || RIGHT) * SPEED * (-1 * (!RIGHT) + RIGHT);
-		ymov = (UP || DOWN) * SPEED * (-1 * (!DOWN) + DOWN);
-		if (xmov && ymov)
-		{
-			xmov /= 2;
-			ymov /= 2;
-		}
-		printf("dir = %d\n", dir);
-		rect.x += xmov;
-		rect.y += ymov;
-		src.x = i * 50;
-		src.y = dir * 50;
-		SDL_RenderClear(render);
-		SDL_RenderCopy(render, tex, &src, &rect);
-		SDL_RenderPresent(render);
+		handle_keys(win, keys, &dir, &mov);
+		move(&dst, mov);
+		anim(&src, dir, keys);
 		ticks = SDL_GetTicks() + (1000 / FPS);
-		if ((UP || DOWN || LEFT || RIGHT))
-		{
-			if (SDL_GetTicks() >= anim_ticks)
-			{
-				i = (i == 4) ?  1 : i + 1;
-				anim_ticks = SDL_GetTicks() + (1000 / ANIM_FPS);
-			}
-		}
-		else
-			i = 0;
 		while (SDL_GetTicks() < ticks);
-//		SDL_Delay(1000 / FPS);
+		SDL_RenderCopy(render, tex, &src, &dst);
+		SDL_RenderPresent(render);
+		SDL_RenderClear(render);
 	}
 }
 
@@ -144,7 +163,7 @@ int		main(void)
 	if((i = init(&win, &render)))
 		return (i);
 	i = 0;
-	loop(render);
+	loop(win, render);
 	IMG_Quit();
 	SDL_Quit();
 	return (0);

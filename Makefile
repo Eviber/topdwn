@@ -17,7 +17,7 @@ $(NAME): $(OBJ)
 	$(CC) $(OBJ) $(CFLAGS) -o $(NAME)
 
 clean:
-	@rm -rf $(OBJS_FILES)
+	@rm -rf $(OBJS_DIR)
 	@echo "Object files removed."
 
 fclean: clean
