@@ -12,12 +12,21 @@
 #define ANIM_FPS 30
 #define FRAMES 24
 #define SPRITE_W 24
-#define SPRITE_H 32
+#define SPRITE_H 26
 
 #define UP    keys[SDL_SCANCODE_UP]
 #define DOWN  keys[SDL_SCANCODE_DOWN]
 #define LEFT  keys[SDL_SCANCODE_LEFT]
 #define RIGHT keys[SDL_SCANCODE_RIGHT]
+
+typedef struct			s_entity
+{
+	SDL_Rect		dst;
+	SDL_Rect		src;
+	SDL_Texture		*tex;
+	SDL_Point		mov;
+	int				dir;
+}						t_entity;
 
 int		init(SDL_Window **win, SDL_Renderer **render)
 {
@@ -66,15 +75,15 @@ SDL_Texture	*load_img(SDL_Renderer *render, char *path)
 	return (tex);
 }
 
-void	load_player(SDL_Renderer *render, SDL_Texture **tex, SDL_Rect *src, SDL_Rect *dst)
+void	load_player(SDL_Renderer *render, t_entity *p)
 {
-	*tex = load_img(render, "test.png");
-	dst->w = SPRITE_W * 4;
-	dst->h = SPRITE_H * 4;
-	dst->x = (WIN_W / 2) - (dst->w / 2);
-	dst->y = (WIN_H / 2) - (dst->h / 2);
-	src->w = SPRITE_W;
-	src->h = SPRITE_H;
+	p->tex = load_img(render, "test.png");
+	p->dst.w = SPRITE_W * 4;
+	p->dst.h = SPRITE_H * 4;
+	p->dst.x = (WIN_W / 2) - (p->dst.w / 2);
+	p->dst.y = (WIN_H / 2) - (p->dst.h / 2);
+	p->src.w = SPRITE_W;
+	p->src.h = SPRITE_H;
 }
 
 
@@ -97,17 +106,21 @@ void	handle_keys(SDL_Window *win, const Uint8 *keys, int *dir, SDL_Point *mov)
 	SDL_PumpEvents();
 	mov->x = (LEFT || RIGHT) * SPEED * (-1 * (!RIGHT) + RIGHT);
 	mov->y = (UP || DOWN) * SPEED * (-1 * UP + (!UP));
+}
+
+void	move(SDL_Rect *dst, SDL_Point *mov)
+{
+	mov->x = (dst->x + mov->x < 0) ? mov->x - (dst->x + mov->x) : mov->x;
+	mov->x = (dst->x + mov->x + dst->w > WIN_W) ? mov->x - (dst->w + dst->x - WIN_W) : mov->x;
+	mov->y = (dst->y + mov->y < 0) ? mov->y - (dst->y + mov->y) : mov->y;
+	mov->y = (dst->y + mov->y + dst->h > WIN_H) ? mov->y - (dst->h + dst->y - WIN_H) : mov->y;
 	if (mov->x && mov->y)
 	{
 		mov->x /= 2;
 		mov->y /= 2;
 	}
-}
-
-void	move(SDL_Rect *dst, SDL_Point mov)
-{
-		dst->x += mov.x;
-		dst->y += mov.y;
+	dst->x += mov->x;
+	dst->y += mov->y;
 }
 
 void	anim(SDL_Rect *src, int dir, const Uint8 *keys)
@@ -131,26 +144,26 @@ void	anim(SDL_Rect *src, int dir, const Uint8 *keys)
 
 void	loop(SDL_Window *win, SDL_Renderer *render)
 {
-	SDL_Rect		dst;
-	SDL_Rect		src;
-	SDL_Texture		*tex;
+	t_entity		p;
 	const Uint8		*keys = SDL_GetKeyboardState(NULL);
-	SDL_Point		mov;
-	int				dir;
 	unsigned int	ticks;
 
-	load_player(render, &tex, &src, &dst);
-	dir = 2;
+	load_player(render, &p);
+	p.dir = 2;
 	while (!SDL_QuitRequested())
 	{
-		handle_keys(win, keys, &dir, &mov);
-		move(&dst, mov);
-		anim(&src, dir, keys);
+		printf("x = %d, y = %d\n", p.mov.x, p.mov.y);
+		handle_keys(win, keys, &(p.dir), &(p.mov));
+		move(&(p.dst), &(p.mov));
+		anim(&(p.src), p.dir, keys);
 		ticks = SDL_GetTicks() + (1000 / FPS);
-		while (SDL_GetTicks() < ticks);
-		SDL_RenderCopy(render, tex, &src, &dst);
+//		SDL_SetRenderDrawColor(render, 127, 85, 22, 255);
+//		SDL_RenderFillRect(render, &(p.dst));
+//		SDL_SetRenderDrawColor(render, 22, 64, 127, 255);
+		SDL_RenderCopy(render, p.tex, &(p.src), &(p.dst));
 		SDL_RenderPresent(render);
 		SDL_RenderClear(render);
+		while (SDL_GetTicks() < ticks);
 	}
 }
 
