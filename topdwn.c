@@ -7,12 +7,12 @@
 #define WIN_W 1920/2
 #define WIN_H 1080/2
 #define TABSIZE 100
-#define SPEED 10
+#define SPEED 8
 #define FPS 30
-#define ANIM_FPS 30
-#define FRAMES 24
-#define SPRITE_W 24
-#define SPRITE_H 26
+#define ANIM_FPS 15
+#define FRAMES 12
+#define SPRITE_W 32
+#define SPRITE_H 32
 
 #define UP    keys[SDL_SCANCODE_UP]
 #define DOWN  keys[SDL_SCANCODE_DOWN]
@@ -77,7 +77,7 @@ SDL_Texture	*load_img(SDL_Renderer *render, char *path)
 
 void	load_player(SDL_Renderer *render, t_entity *p)
 {
-	p->tex = load_img(render, "test.png");
+	p->tex = load_img(render, "sprite.png");
 	p->dst.w = SPRITE_W * 4;
 	p->dst.h = SPRITE_H * 4;
 	p->dst.x = (WIN_W / 2) - (p->dst.w / 2);
@@ -85,21 +85,26 @@ void	load_player(SDL_Renderer *render, t_entity *p)
 	p->src.w = SPRITE_W;
 	p->src.h = SPRITE_H;
 }
-
-
-void	handle_keys(SDL_Window *win, const Uint8 *keys, int *dir, SDL_Point *mov)
+ 
+void	handle_key(SDL_Window *win, const Uint8 *keys, int *dir, SDL_Point *mov)
 {
 	if (keys[SDL_SCANCODE_F])
 		SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
 	if (keys[SDL_SCANCODE_ESCAPE])
 		SDL_SetWindowFullscreen(win, 0);
-	if (DOWN)
-		*dir = 2;
-	if (UP)
+	if (DOWN || LEFT)
+	{
+		*dir = 1;
+		if (LEFT)
+			*dir = 2;
+	}
+	if (UP || RIGHT)
+	{
 		*dir = 0;
-	if (LEFT)
-		*dir = 3;
-	if (RIGHT)
+		if (RIGHT)
+			*dir = 3;
+	}
+	if (DOWN && RIGHT)
 		*dir = 1;
 	mov->x = 0;
 	mov->y = 0;
@@ -110,15 +115,24 @@ void	handle_keys(SDL_Window *win, const Uint8 *keys, int *dir, SDL_Point *mov)
 
 void	move(SDL_Rect *dst, SDL_Point *mov)
 {
-	mov->x = (dst->x + mov->x < 0) ? mov->x - (dst->x + mov->x) : mov->x;
-	mov->x = (dst->x + mov->x + dst->w > WIN_W) ? mov->x - (dst->w + dst->x - WIN_W) : mov->x;
-	mov->y = (dst->y + mov->y < 0) ? mov->y - (dst->y + mov->y) : mov->y;
-	mov->y = (dst->y + mov->y + dst->h > WIN_H) ? mov->y - (dst->h + dst->y - WIN_H) : mov->y;
-	if (mov->x && mov->y)
+	SDL_Point	p;
+	SDL_Point	initspeed;
+
+	initspeed = *mov;
+	printf("x = %d,\ty = %d\t| ", mov->x, mov->y);
+	p.x = dst->x + mov->x;
+	p.y = dst->y + mov->y;
+	mov->x = (p.x < 0) ? mov->x - (dst->x + mov->x) : mov->x;
+	mov->x = (p.x + dst->w > WIN_W) ? mov->x - (p.x + dst->w - WIN_W) : mov->x;
+	mov->y = (p.y < 0) ? mov->y - (dst->y + mov->y) : mov->y;
+	mov->y = (p.y + dst->h > WIN_H) ? mov->y - (p.y + dst->h - WIN_H) : mov->y;
+	printf("x = %d,\ty = %d\t| ", mov->x, mov->y);
+	if (mov->x && mov->y && mov->x == initspeed.x && mov->y == initspeed.y)
 	{
-		mov->x /= 2;
-		mov->y /= 2;
+		mov->x = initspeed.x / 2;
+		mov->y = initspeed.y / 2;
 	}
+	printf("x = %d,\ty = %d\n", mov->x, mov->y);
 	dst->x += mov->x;
 	dst->y += mov->y;
 }
@@ -152,8 +166,7 @@ void	loop(SDL_Window *win, SDL_Renderer *render)
 	p.dir = 2;
 	while (!SDL_QuitRequested())
 	{
-		printf("x = %d, y = %d\n", p.mov.x, p.mov.y);
-		handle_keys(win, keys, &(p.dir), &(p.mov));
+		handle_key(win, keys, &(p.dir), &(p.mov));
 		move(&(p.dst), &(p.mov));
 		anim(&(p.src), p.dir, keys);
 		ticks = SDL_GetTicks() + (1000 / FPS);
