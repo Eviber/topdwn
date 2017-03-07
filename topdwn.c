@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
 
 #define WIN_W 1920/2
 #define WIN_H 1080/2
@@ -63,12 +63,12 @@ SDL_Texture	*load_img(SDL_Renderer *render, char *path)
 
 	if (!(surf = IMG_Load(path)))
 	{
-		fprintf(stderr, "Error while loading img");
+		fprintf(stderr, "Error while loading img: %s\n", SDL_GetError());
 		exit(EXIT_FAILURE);
 	}
 	if (!(tex = SDL_CreateTextureFromSurface(render, surf)))
 	{
-		fprintf(stderr, "Error while loading img");
+		fprintf(stderr, "Error while loading img: %s\n", SDL_GetError());
 		exit(EXIT_FAILURE);
 	}
 	SDL_FreeSurface(surf);

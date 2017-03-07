@@ -1,6 +1,7 @@
-NAME = topdwn 
+NAME = topdwn
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror `sdl2-config --cflags --libs` -lSDL2_image
+CFLAGS = -Wall -Wextra -Werror `sdl2-config --cflags`
+LIBS = `sdl2-config --libs` -lSDL2_image
 
 SRC = topdwn.c
 OBJS_FILES = ${SRC:c=o}
@@ -14,7 +15,7 @@ $(OBJS_DIR)/%.o : %.c
 	$(CC) $(CFLAGS)	-c -o $@ $^
 
 $(NAME): $(OBJ)
-	$(CC) $(OBJ) $(CFLAGS) -o $(NAME)
+	$(CC) $(OBJ) $(CFLAGS) $(LIBS) -o $(NAME)
 
 clean:
 	@rm -rf $(OBJS_DIR)
