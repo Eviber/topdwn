@@ -35,9 +35,7 @@ int		init(SDL_Window **win, SDL_Renderer **render)
 	{
 		fprintf(stderr, "Error while initializing SDL: %s\n", SDL_GetError());
 		return (1);
-	}
-	IMG_Init(IMG_INIT_PNG);
-	*win = SDL_CreateWindow("topdwn",
+	} IMG_Init(IMG_INIT_PNG); *win = SDL_CreateWindow("topdwn",
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 			WIN_W, WIN_H, 0);
 	if (!*win)
@@ -119,20 +117,17 @@ void	move(SDL_Rect *dst, SDL_Point *mov)
 	SDL_Point	initspeed;
 
 	initspeed = *mov;
-	printf("x = %d,\ty = %d\t| ", mov->x, mov->y);
 	p.x = dst->x + mov->x;
 	p.y = dst->y + mov->y;
 	mov->x = (p.x < 0) ? mov->x - (dst->x + mov->x) : mov->x;
 	mov->x = (p.x + dst->w > WIN_W) ? mov->x - (p.x + dst->w - WIN_W) : mov->x;
 	mov->y = (p.y < 0) ? mov->y - (dst->y + mov->y) : mov->y;
 	mov->y = (p.y + dst->h > WIN_H) ? mov->y - (p.y + dst->h - WIN_H) : mov->y;
-	printf("x = %d,\ty = %d\t| ", mov->x, mov->y);
 	if (mov->x && mov->y && mov->x == initspeed.x && mov->y == initspeed.y)
 	{
 		mov->x = initspeed.x / 2;
 		mov->y = initspeed.y / 2;
 	}
-	printf("x = %d,\ty = %d\n", mov->x, mov->y);
 	dst->x += mov->x;
 	dst->y += mov->y;
 }
