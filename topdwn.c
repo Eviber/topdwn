@@ -7,7 +7,7 @@
 #define WIN_W 1920/2
 #define WIN_H 1080/2
 #define TABSIZE 100
-#define SPEED 8
+#define SPEED 10
 #define FPS 30
 #define ANIM_FPS 15
 #define FRAMES 12
